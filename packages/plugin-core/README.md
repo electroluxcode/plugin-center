@@ -72,6 +72,11 @@ pluginCenter.executePlugin('plugin-id');
 - `batchDeletePlugins(pluginIds)` - 批量删除插件
 - `batchUpdatePlugins(updates)` - 批量更新插件
 
+### 插件导入/导出
+
+- `getPluginExports(pluginId)` - 获取插件的导出内容（不执行插件，只解析并返回导出）
+- `importPlugin(pluginId)` - 导入插件（与 `getPluginExports` 相同，支持类似 ES6 import 的用法）
+
 ### 事件监听
 
 - `on(event, callback)` - 监听事件（pluginAdded, pluginDeleted, pluginUpdated, pluginEnabled, pluginDisabled, pluginExecuted）
@@ -89,6 +94,10 @@ pluginCenter.executePlugin('plugin-id');
 - `setErrorHandler(handler)` - 设置错误处理器
 - `getErrorHistory(limit?)` - 获取错误历史记录
 - `clearAllPlugins()` - 清空所有插件
+
+### 常量
+
+- `PLUGIN_STORAGE_KEY` - localStorage 存储键名（值为 `'front_plugin_center_plugins'`）
 
 ## 类型定义
 
