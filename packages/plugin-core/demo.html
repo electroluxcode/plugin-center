@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>插件管理</title>
+</head>
+<body>
+  <h1>插件管理</h1>
+
+  <div>
+    <div>
+      <label>名称: <input type="text" id="pluginName" style="width: 100%;"></label>
+    </div>
+    <div>
+      <label>描述: <input type="text" id="pluginDescription" style="width: 100%;"></label>
+    </div>
+    <div>
+      <label>内容: <textarea id="pluginContent" rows="10" style="width: 100%; font-family: monospace;"></textarea></label>
+    </div>
+    <button onclick="addPlugin()">添加插件</button>
+    <button onclick="executeAllEnabledPlugins()">执行所有启用的插件</button>
+  </div>
+
+  <h2>插件列表</h2>
+  <div id="pluginList"></div>
+
+  <script type="module">
+    import { createPluginCenter, pluginEntity } from './dist/index.es.js';
+
+    // 初始化插件中心
+    const pluginCenter = createPluginCenter({
+      plugin: [],
+      setting: {
+        mode: 'api'
+      }
+    });
+    window.pluginCenter = pluginCenter;
+    
+    // 渲染插件列表
+    function renderPlugins() {
+      const plugins = pluginCenter.getPlugins();
+      const listEl = document.getElementById('pluginList');
+      
+      if (plugins.length === 0) {
+        listEl.innerHTML = '<p>暂无插件</p>';
+        return;
+      }
+
+      listEl.innerHTML = plugins.map(plugin => {
+        const name = String(plugin.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const desc = String(plugin.description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `
+        <div>
+          <h3>${name}</h3>
+          <p>${desc}</p>
+          <button onclick="executePlugin('${plugin.id}')">执行</button>
+          <button onclick="deletePlugin('${plugin.id}')">删除</button>
+          <hr>
+        </div>
+      `;
+      }).join('');
+    }
+
+    // 订阅插件变化，自动更新 UI
+    pluginEntity.subscribe((plugins) => {
+      renderPlugins();
+    });
+
+    // 添加插件
+    const addPlugin = () => {
+      const name = document.getElementById('pluginName').value.trim();
+      const description = document.getElementById('pluginDescription').value.trim();
+      const content = document.getElementById('pluginContent').value.trim();
+      
+      if (!content) {
+        alert('请输入插件内容');
+        return;
+      }
+
+      try {
+        pluginCenter.addPlugin({
+          name: name || '',
+          description: description || '',
+          content: content,
+          enabled: true,
+          allowDelete: true
+        });
+        
+        document.getElementById('pluginName').value = '';
+        document.getElementById('pluginDescription').value = '';
+        document.getElementById('pluginContent').value = '';
+        // renderPlugins() 会通过订阅自动调用
+        alert('添加成功');
+      } catch (error) {
+        alert('添加失败: ' + error.message);
+      }
+    };
+
+    // 执行插件
+    const executePlugin = (pluginId) => {
+      try {
+        pluginCenter.executePlugin(pluginId);
+        alert('执行成功');
+      } catch (error) {
+        alert('执行失败: ' + error.message);
+      }
+    };
+
+    // 执行所有启用的插件
+    const executeAllEnabledPlugins = () => {
+      try {
+        pluginCenter.executeAllEnabledPlugins();
+        alert('执行完成');
+      } catch (error) {
+        alert('执行失败: ' + error.message);
+      }
+    };
+
+    // 删除插件
+    const deletePlugin = (pluginId) => {
+      try {
+        const success = pluginCenter.deletePlugin(pluginId);
+        if (success) {
+          // renderPlugins() 会通过订阅自动调用
+          alert('删除成功');
+        } else {
+          alert('删除失败');
+        }
+      } catch (error) {
+        alert('删除失败: ' + error.message);
+      }
+    };
+
+    // 将函数暴露到全局，供 onclick 使用
+    window.addPlugin = addPlugin;
+    window.executePlugin = executePlugin;
+    window.executeAllEnabledPlugins = executeAllEnabledPlugins;
+    window.deletePlugin = deletePlugin;
+
+    // 初始渲染
+    renderPlugins();
+  </script>
+</body>
+</html>
