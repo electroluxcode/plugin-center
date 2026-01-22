@@ -52,15 +52,14 @@ const EXAMPLE_PLUGIN_CONTENT = `// ==UserScript==
 // @match        *
 // ==/UserScript==
 
-(function() {
-    'use strict';
-    
-    console.log('示例插件已加载！');
-    
-    // 示例：在控制台输出当前页面信息
-    console.log('当前页面:', window.location.href);
-    console.log('页面标题:', document.title);
-})();`;
+const test = () => {
+  console.log('test');
+}
+
+export {
+  test
+}
+`;
 
 // 默认插件配置
 const DEFAULT_PLUGINS = [
@@ -80,70 +79,66 @@ const DEFAULT_PLUGINS = [
       name: '示例插件',
       description: '这是一个示例插件，展示如何创建自定义功能。此插件不可删除。',
       content: EXAMPLE_PLUGIN_CONTENT,
-      enabled: false,
+      enabled: true,
       allowDelete: false
     }
   }
 ];
 
+
 // 初始化默认插件的函数（独立于 React 组件）
 const initDefaultPlugins = (pluginCenter: ReturnType<typeof createPluginCenter>) => {
+
+  // 获取所有现有插件，确保数据已加载
+  const allPlugins = pluginCenter.getPlugins();
+  console.log(allPlugins, "allPlugins");
+
   DEFAULT_PLUGINS.forEach(({ id, config }) => {
-    // 通过 getPlugin 方法检查是否存在指定 ID 的插件
-    const existingPlugin = pluginCenter.getPlugin(id);
+    // 检查是否已存在指定 ID 的插件
+    const existingPluginById = allPlugins.find((p: Plugin) => p.id === id);
     
+    // 如果已存在指定 ID 的插件，跳过
+    if (existingPluginById) {
+      return;
+    }
+
+    // 检查是否已存在相同名称和内容的插件（防止重复添加）
+    const duplicatePlugin = allPlugins.find(
+      (p: Plugin) => p.name === config.name && p.content === config.content
+    );
+
+    // 如果找到重复的插件，更新其 ID 为固定值
+    if (duplicatePlugin && duplicatePlugin.id !== id) {
+      const updatedPlugins = allPlugins.map((p: Plugin) =>
+        p.id === duplicatePlugin.id ? { ...p, id } : p
+      );
+      pluginEntity.setPlugins(updatedPlugins);
+      localStorage.setItem(PLUGIN_STORAGE_KEY, JSON.stringify(updatedPlugins));
+      return;
+    }
+
     // 如果不存在，则添加插件
-    if (!existingPlugin) {
+    if (!duplicatePlugin) {
       try {
         const newPlugin = pluginCenter.addPlugin(config);
         
         // 添加后立即更新 id 为固定值
         if (newPlugin.id !== id) {
-          // 直接操作 localStorage 和 pluginEntity 来更新 id
-          const storedPlugins = localStorage.getItem(PLUGIN_STORAGE_KEY);
-          if (storedPlugins) {
-            const plugins = JSON.parse(storedPlugins);
-            const updatedPlugins = plugins.map((p: Plugin) =>
-              p.id === newPlugin.id ? { ...p, id } : p
-            );
-            pluginEntity.setPlugins(updatedPlugins);
-          }
+          const updatedPlugins = pluginCenter.getPlugins().map((p: Plugin) =>
+            p.id === newPlugin.id ? { ...p, id } : p
+          );
+          pluginEntity.setPlugins(updatedPlugins);
+          // localStorage.setItem(PLUGIN_STORAGE_KEY, JSON.stringify(updatedPlugins));
         }
       } catch (error) {
         console.error(`添加内置插件 ${id} 失败:`, error);
       }
     }
   });
+
 };
 
 const App: React.FC = () => {
-  const handleError = (error: Error) => {
-    console.error('插件中心错误:', error);
-    // 使用更优雅的错误提示
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 59, 48, 0.95);
-      color: white;
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      z-index: 10000;
-      max-width: 400px;
-      font-size: 14px;
-      animation: slideIn 0.3s ease-out;
-    `;
-    errorDiv.textContent = `错误: ${error.message}`;
-    document.body.appendChild(errorDiv);
-    
-    setTimeout(() => {
-      errorDiv.style.animation = 'slideOut 0.3s ease-out';
-      setTimeout(() => errorDiv.remove(), 300);
-    }, 3000);
-  };
-
   // 创建 pluginCenter 实例的 ref
   const pluginCenterRef = useRef<PluginCenterRef>(null);
 
@@ -156,6 +151,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
+    <>
     <PluginCenter
       config={{
         plugin: [], // 不在配置中直接添加，而是在 useEffect 中通过 getPluginById 检查后添加
@@ -164,9 +160,9 @@ const App: React.FC = () => {
           autoExecute: false
         }
       }}
-      onError={handleError}
       ref={pluginCenterRef}
     />
+    </>
   );
 };
 

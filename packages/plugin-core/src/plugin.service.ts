@@ -1,6 +1,6 @@
 import { Plugin, PluginQuery, PluginUpdate, PluginStats, PluginExecutionContext } from './types';
 import pluginEntity from './plugin.entity';
-import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY } from './plugin-utils';
+import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY, getPluginExportsFromContent } from './plugin-utils';
 
 /**
  * @description 插件服务层，用于管理插件的本地存储、导出导入和业务逻辑
@@ -439,6 +439,41 @@ class PluginService {
 
     const url = targetUrl || (typeof window !== 'undefined' ? window.location.href : '');
     return checkUrlMatch(plugin.metadata.match, url);
+  }
+
+  /**
+   * 获取插件的导出内容（不执行插件，只解析并返回导出）
+   * 支持按需导入和默认导入
+   * @example
+   * const exports = pluginService.getPluginExports('plugin-id');
+   * const test = exports.test; // 按需导入
+   * const defaultExport = exports.default; // 默认导入
+   */
+  getPluginExports(pluginId: string): Record<string, any> {
+    const plugin = pluginEntity.getPluginById(pluginId);
+    if (!plugin) {
+      throw new Error('插件不存在');
+    }
+
+    const context: PluginExecutionContext = {
+      pluginId: plugin.id,
+      pluginName: plugin.name,
+      url: typeof window !== 'undefined' ? window.location.href : '',
+      timestamp: Date.now(),
+    };
+
+    return getPluginExportsFromContent(plugin.content, context);
+  }
+
+  /**
+   * 导入插件（别名方法，与 getPluginExports 相同）
+   * 支持类似 ES6 import 的用法
+   * @example
+   * const { test } = pluginService.importPlugin('plugin-id'); // 按需导入
+   * const defaultExport = pluginService.importPlugin('plugin-id').default; // 默认导入
+   */
+  importPlugin(pluginId: string): Record<string, any> {
+    return this.getPluginExports(pluginId);
   }
 }
 

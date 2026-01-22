@@ -175,3 +175,77 @@ export function formatDate(timestamp: number): string {
 export function getPluginSize(content: string): number {
   return new Blob([content]).size;
 }
+
+/**
+ * 从插件代码中获取导出内容（不执行插件，只解析并返回导出）
+ * 支持按需导入和默认导入
+ * @param content 插件代码内容
+ * @param context 插件执行上下文
+ * @returns 导出对象
+ */
+export function getPluginExportsFromContent(
+  content: string,
+  context: { pluginId: string; pluginName: string; url: string; timestamp: number }
+): Record<string, any> {
+  // 检测代码是否包含 export 关键字
+  const hasExport = /\bexport\b/.test(content);
+  
+  if (!hasExport) {
+    // 如果没有 export，返回空对象
+    return {};
+  }
+
+  try {
+    // 创建一个导出收集器
+    const __pluginExports: Record<string, any> = {};
+    
+    // 转换代码：将 export 语句转换为赋值语句
+    let transformedCode = content
+      // 处理 export default value -> __pluginExports.default = value
+      .replace(/export\s+default\s+([^;]+);?/g, (match, value) => {
+        const trimmed = value.trim();
+        return `__pluginExports.default = ${trimmed};`;
+      })
+      // 处理 export const/let/var/function/class name -> const/let/var/function/class name; __pluginExports.name = name;
+      .replace(/export\s+(const|let|var|function|class|async\s+function)\s+(\w+)([^;]*);?/g, (match, keyword, name, rest) => {
+        return `${keyword} ${name}${rest}; __pluginExports['${name}'] = ${name};`;
+      })
+      // 处理 export { a, b } -> __pluginExports.a = a; __pluginExports.b = b;
+      .replace(/export\s*\{([^}]+)\}/g, (match, exports) => {
+        const names = exports.split(',').map((n: string) => n.trim());
+        return names.map((name: string) => {
+          const [exportName, localName] = name.includes(' as ') 
+            ? name.split(' as ').map((n: string) => n.trim())
+            : [name, name];
+          return `__pluginExports['${exportName}'] = ${localName};`;
+        }).join('\n');
+      });
+    
+    // 执行转换后的代码
+    const func = new Function(
+      '__pluginExports',
+      'pluginId',
+      'pluginName',
+      'url',
+      'timestamp',
+      `
+      'use strict';
+      ${transformedCode}
+      return __pluginExports;
+      `
+    );
+
+    const exports = func(
+      __pluginExports,
+      context.pluginId,
+      context.pluginName,
+      context.url,
+      context.timestamp
+    );
+
+    // 返回导出对象
+    return exports && typeof exports === 'object' ? exports : {};
+  } catch (error) {
+    throw new Error(`获取插件导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
+  }
+}

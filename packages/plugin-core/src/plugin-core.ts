@@ -262,6 +262,29 @@ class FrontPluginCenter {
   }
 
   /**
+   * 获取插件的导出内容（不执行插件，只解析并返回导出）
+   * 支持按需导入和默认导入
+   * @example
+   * const exports = pluginCenter.getPluginExports('plugin-id');
+   * const test = exports.test; // 按需导入
+   * const defaultExport = exports.default; // 默认导入
+   */
+  getPluginExports(pluginId: string): Record<string, any> {
+    return pluginService.getPluginExports(pluginId);
+  }
+
+  /**
+   * 导入插件（别名方法，与 getPluginExports 相同）
+   * 支持类似 ES6 import 的用法
+   * @example
+   * const { test } = pluginCenter.importPlugin('plugin-id'); // 按需导入
+   * const defaultExport = pluginCenter.importPlugin('plugin-id').default; // 默认导入
+   */
+  importPlugin(pluginId: string): Record<string, any> {
+    return pluginService.importPlugin(pluginId);
+  }
+
+  /**
    * 执行所有启用的插件
    */
   executeAllEnabledPlugins(): void {

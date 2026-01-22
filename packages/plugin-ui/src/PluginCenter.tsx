@@ -8,7 +8,7 @@ export interface PluginCenterProps {
   config?: PluginCenterConfig;
   onError?: (error: Error) => void;
 }
-
+const EXAMPLE_PLUGIN_ID = 'example-plugin';
 export interface PluginCenterRef {
   getPluginCenter: () => ReturnType<typeof createPluginCenter>;
 }
@@ -104,6 +104,14 @@ export const PluginCenter = forwardRef<PluginCenterRef, PluginCenterProps>(({
 
   const stats = pluginCenter.getPluginStats();
 
+  useEffect(() => {
+        const { test } = pluginCenter.importPlugin(EXAMPLE_PLUGIN_ID);
+        if (typeof test === 'function') {
+          console.log('✅ 导入成功，调用 test 函数:');
+          test();
+          console.log('✅ 验证完成！');
+        }
+  }, []);
   return (
     <div style={{ 
       minHeight: '100vh',
