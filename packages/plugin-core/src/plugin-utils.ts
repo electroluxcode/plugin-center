@@ -1,6 +1,11 @@
 import { PluginMetadata } from './types';
 
 /**
+ * localStorage 存储键名
+ */
+export const PLUGIN_STORAGE_KEY = 'front_plugin_center_plugins';
+
+/**
  * 解析 UserScript 元数据
  * 从插件 content 中解析 // ==UserScript== 和 // ==/UserScript== 之间的内容
  */

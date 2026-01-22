@@ -1,8 +1,6 @@
 import { Plugin, PluginQuery, PluginUpdate, PluginStats, PluginExecutionContext } from './types';
 import pluginEntity from './plugin.entity';
-import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch } from './plugin-utils';
-
-const STORAGE_KEY = 'front_plugin_center_plugins';
+import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY } from './plugin-utils';
 
 /**
  * @description 插件服务层，用于管理插件的本地存储、导出导入和业务逻辑
@@ -16,7 +14,7 @@ class PluginService {
   savePlugins(plugins: Plugin[]): void {
     try {
       const data = JSON.stringify(plugins);
-      localStorage.setItem(STORAGE_KEY, data);
+      localStorage.setItem(PLUGIN_STORAGE_KEY, data);
     } catch (error) {
       console.error('保存插件数据失败:', error);
     }
@@ -27,7 +25,7 @@ class PluginService {
    */
   loadPluginsFromStorage(): Plugin[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = localStorage.getItem(PLUGIN_STORAGE_KEY);
       if (data) {
         return JSON.parse(data);
       }
@@ -42,7 +40,7 @@ class PluginService {
    */
   clearPlugins(): void {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(PLUGIN_STORAGE_KEY);
     } catch (error) {
       console.error('清空插件数据失败:', error);
     }

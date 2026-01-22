@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { PluginCenter, PluginCenterRef } from './src';
-import { pluginEntity, Plugin, createPluginCenter } from '@plugin-center/core';
+import { pluginEntity, Plugin, createPluginCenter, PLUGIN_STORAGE_KEY } from '@plugin-center/core';
 
 // 内置插件的固定 ID
 const WELCOME_PLUGIN_ID = 'welcome-plugin';
@@ -100,13 +100,12 @@ const initDefaultPlugins = (pluginCenter: ReturnType<typeof createPluginCenter>)
         // 添加后立即更新 id 为固定值
         if (newPlugin.id !== id) {
           // 直接操作 localStorage 和 pluginEntity 来更新 id
-          const storedPlugins = localStorage.getItem('front_plugin_center_plugins');
+          const storedPlugins = localStorage.getItem(PLUGIN_STORAGE_KEY);
           if (storedPlugins) {
             const plugins = JSON.parse(storedPlugins);
             const updatedPlugins = plugins.map((p: Plugin) =>
               p.id === newPlugin.id ? { ...p, id } : p
             );
-            localStorage.setItem('front_plugin_center_plugins', JSON.stringify(updatedPlugins));
             pluginEntity.setPlugins(updatedPlugins);
           }
         }
