@@ -8,8 +8,10 @@ import {
   PluginErrorCode,
   PluginStats,
   PluginExecutionContext,
+  PluginInput,
   PluginExecutorConfig,
 } from './types';
+import { PluginType } from './types';
 import pluginEntity from './plugin.entity';
 import pluginService from './plugin.service';
 import { parsePluginMetadata, validatePlugin, checkUrlMatch } from './plugin.utils';
@@ -66,7 +68,7 @@ class FrontPluginCenter {
   /**
    * 添加插件
    */
-  addPlugin(plugin: Omit<Plugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata'>): Plugin {
+  addPlugin(plugin: PluginInput): Plugin {
     try {
       const newPlugin = pluginService.addPlugin(plugin);
       this.emit('pluginAdded', newPlugin);
@@ -190,11 +192,18 @@ class FrontPluginCenter {
 
   /**
    * 执行插件
+   * 只执行类型为 script 的插件
    */
   executePlugin(pluginId: string): void {
     const plugin = pluginService.getPlugin(pluginId);
     if (!plugin) {
       throw new Error('插件不存在');
+    }
+
+    // 只执行 script 类型的插件
+    if (plugin.type !== PluginType.SCRIPT) {
+      console.warn(`插件 ${plugin.name} 类型为 ${plugin.type}，不执行`);
+      return; // 模块插件不执行，只能通过 importPlugin 导入使用
     }
 
     if (!plugin.enabled) {
@@ -286,10 +295,13 @@ class FrontPluginCenter {
 
   /**
    * 执行所有启用的插件
+   * 只执行类型为 script 的插件
    */
   executeAllEnabledPlugins(): void {
     const enabledPlugins = pluginService.getPlugins({ enabled: true });
-    for (const plugin of enabledPlugins) {
+    // 过滤出 script 类型的插件
+    const scriptPlugins = enabledPlugins.filter(plugin => plugin.type === PluginType.SCRIPT);
+    for (const plugin of scriptPlugins) {
       try {
         this.executePlugin(plugin.id);
       } catch (error) {
@@ -329,7 +341,7 @@ class FrontPluginCenter {
 
   // ========== 批量操作 ==========
 
-  batchAddPlugins(plugins: Array<Omit<Plugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata'>>): Plugin[] {
+  batchAddPlugins(plugins: Array<PluginInput>): Plugin[] {
     return pluginService.batchAddPlugins(plugins);
   }
 

@@ -1,3 +1,12 @@
+// 插件类型常量
+export const PluginType = {
+  SCRIPT: 'script',      // 脚本插件：直接执行的插件（如 UserScript）
+  MODULE: 'module'       // 模块插件：导出给应用使用的插件（导出函数/对象供导入）
+} as const;
+
+// 插件类型字面量联合类型
+export type PluginTypeValue = (typeof PluginType)[keyof typeof PluginType];
+
 // 插件元数据类型（从 UserScript 头部解析）
 export type PluginMetadata = {
   name?: string;           // @name
@@ -10,8 +19,8 @@ export type PluginMetadata = {
   [key: string]: any;     // 其他元数据
 }
 
-// 插件完整类型
-export type Plugin = {
+// 脚本插件：直接执行的插件类型
+export type ScriptPlugin = {
   id: string;             // 插件唯一标识（自动生成）
   name: string;
   icon?: string;
@@ -19,10 +28,29 @@ export type Plugin = {
   enabled: boolean;
   allowDelete: boolean;
   content: string;
+  type: typeof PluginType.SCRIPT; // 插件类型：脚本插件
   metadata?: PluginMetadata;  // 解析后的元数据
   createdAt?: number;     // 创建时间戳
   updatedAt?: number;      // 更新时间戳
 }
+
+// 模块插件：导出给应用使用的插件类型
+export type ModulePlugin = {
+  id: string;             // 插件唯一标识（自动生成）
+  name: string;
+  icon?: string;
+  description: string;
+  enabled: boolean;
+  allowDelete: boolean;
+  content: string;
+  type: typeof PluginType.MODULE; // 插件类型：模块插件
+  metadata?: PluginMetadata;  // 解析后的元数据
+  createdAt?: number;     // 创建时间戳
+  updatedAt?: number;      // 更新时间戳
+}
+
+// 插件完整类型（联合类型）
+export type Plugin = ScriptPlugin | ModulePlugin
 
 // 插件查询条件
 export type PluginQuery = {
@@ -34,6 +62,11 @@ export type PluginQuery = {
 // 插件更新数据（部分字段）
 export type PluginUpdate = Partial<Omit<Plugin, 'id' | 'createdAt'>> & {
   updatedAt?: number;
+}
+
+// 创建插件时的输入类型（type 可选，会自动检测）
+export type PluginInput = Omit<ScriptPlugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata' | 'type'> & {
+  type?: PluginTypeValue; // 可选，如果不指定则自动检测
 }
 
 // 插件执行时的上下文环境
@@ -70,7 +103,7 @@ export enum PluginErrorCode {
 
 // 插件中心配置
 export type PluginCenterConfig = {
-  plugin: Array<Omit<Plugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata'>>;
+  plugin: Array<PluginInput>; // 使用 PluginInput 类型，支持可选的 type 字段
   setting: {
     mode: "api" | "list";
     id?: string;          // list 模式下挂载的 DOM 元素 ID

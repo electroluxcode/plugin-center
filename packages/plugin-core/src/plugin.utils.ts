@@ -1,4 +1,5 @@
-import { PluginMetadata } from './types';
+import { PluginMetadata, PluginTypeValue } from './types';
+import { PluginType } from './types';
 
 /**
  * localStorage 存储键名
@@ -172,6 +173,15 @@ export function formatDate(timestamp: number): string {
 /**
  * 获取插件大小（字节）
  */
+/**
+ * 检测插件类型
+ * 如果代码包含 export 关键字，则为模块插件，否则为脚本插件
+ */
+export function detectPluginType(content: string): PluginTypeValue {
+  const hasExport = /\bexport\b/.test(content);
+  return hasExport ? PluginType.MODULE : PluginType.SCRIPT;
+}
+
 export function getPluginSize(content: string): number {
   return new Blob([content]).size;
 }

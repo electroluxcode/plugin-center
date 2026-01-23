@@ -1,6 +1,7 @@
-import { Plugin, PluginQuery, PluginUpdate, PluginStats, PluginExecutionContext } from './types';
+import { Plugin, PluginQuery, PluginUpdate, PluginStats, PluginExecutionContext, PluginInput } from './types';
+import { PluginType } from './types';
 import pluginEntity from './plugin.entity';
-import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY, getPluginExportsFromContent } from './plugin.utils';
+import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY, getPluginExportsFromContent, detectPluginType } from './plugin.utils';
 
 /**
  * @description 插件服务层，用于管理插件的本地存储、导出导入和业务逻辑
@@ -79,7 +80,7 @@ class PluginService {
   /**
    * 添加插件（适配层：处理数据转化和逻辑判断）
    */
-  addPlugin(pluginData: Omit<Plugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata'>): Plugin {
+  addPlugin(pluginData: PluginInput): Plugin {
     // 验证插件内容
     const validation = validatePlugin(pluginData.content);
     if (!validation.valid) {
@@ -95,6 +96,11 @@ class PluginService {
     // 如果元数据中有 icon，使用元数据的 icon
     const finalIcon = metadata.icon || pluginData.icon;
 
+    // 检测插件类型：如果用户明确指定了 type，使用用户指定的；否则自动检测
+    const pluginType = 'type' in pluginData && pluginData.type 
+      ? pluginData.type 
+      : detectPluginType(pluginData.content);
+
     // 生成插件对象
     const plugin: Plugin = {
       id: generateId(),
@@ -104,6 +110,7 @@ class PluginService {
       enabled: pluginData.enabled,
       allowDelete: pluginData.allowDelete !== undefined ? pluginData.allowDelete : true,
       content: pluginData.content,
+      type: pluginType,
       metadata,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -269,7 +276,7 @@ class PluginService {
   /**
    * 批量添加插件
    */
-  batchAddPlugins(plugins: Array<Omit<Plugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata'>>): Plugin[] {
+  batchAddPlugins(plugins: Array<PluginInput>): Plugin[] {
     const addedPlugins: Plugin[] = [];
     for (const pluginData of plugins) {
       try {
@@ -380,11 +387,17 @@ class PluginService {
 
   /**
    * 执行插件（根据 match 规则匹配 URL）
+   * 只执行类型为 script 的插件
    */
   executePlugin(pluginId: string, targetUrl?: string): void {
     const plugin = pluginEntity.getPluginById(pluginId);
     if (!plugin) {
       throw new Error('插件不存在');
+    }
+
+    // 只执行 script 类型的插件
+    if (plugin.type !== PluginType.SCRIPT) {
+      return; // 模块插件不执行，只能通过 importPlugin 导入使用
     }
 
     if (!plugin.enabled) {
@@ -416,10 +429,13 @@ class PluginService {
 
   /**
    * 执行所有启用的插件（根据 match 规则匹配当前 URL）
+   * 只执行类型为 script 的插件
    */
   executeAllEnabledPlugins(targetUrl?: string): void {
     const enabledPlugins = this.getPlugins({ enabled: true });
-    for (const plugin of enabledPlugins) {
+    // 过滤出 script 类型的插件
+    const scriptPlugins = enabledPlugins.filter(plugin => plugin.type === PluginType.SCRIPT);
+    for (const plugin of scriptPlugins) {
       try {
         this.executePlugin(plugin.id, targetUrl);
       } catch (error) {

@@ -1,5 +1,8 @@
 // 导出所有类型
 export * from './types';
+// 明确导出常用类型（方便使用）
+export type { Plugin, ScriptPlugin, ModulePlugin, PluginInput, PluginTypeValue } from './types';
+export { PluginType } from './types';
 
 // 导出核心类
 export { default as FrontPluginCenter, createPluginCenter } from './plugin.core';
