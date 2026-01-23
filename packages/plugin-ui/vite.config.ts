@@ -7,7 +7,7 @@ export default defineConfig({
   base: './', // 使用相对路径打包，支持部署到子路径
   resolve: {
     alias: {
-      '@plugin-center/core': path.resolve(__dirname, '../plugin-core/src'),
+      '@plugin-center/core': path.resolve(__dirname, '../plugin.core/src'),
     },
   },
   server: {

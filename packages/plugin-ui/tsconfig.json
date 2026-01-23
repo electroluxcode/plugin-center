@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@plugin-center/core": ["../plugin-core/src"]
+      "@plugin-center/core": ["../plugin.core/src"]
     },
     "composite": false,
     "jsx": "react-jsx"
