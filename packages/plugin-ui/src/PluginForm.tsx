@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Plugin } from '@plugin-center/core';
+import { PluginInput } from '@plugin-center/core';
 
 export interface PluginFormProps {
-  onSubmit: (plugin: Omit<Plugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata'>) => void;
+  onSubmit: (plugin: PluginInput) => void;
   onError?: (error: Error) => void;
 }
 

@@ -102,8 +102,9 @@ class PluginService {
       : detectPluginType(pluginData.content);
 
     // 生成插件对象
+    const pluginId = pluginData.id || generateId()
     const plugin: Plugin = {
-      id: generateId(),
+      id: pluginId,
       name: finalName,
       icon: finalIcon,
       description: metadata.description || pluginData.description,

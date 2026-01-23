@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { PluginCenter, PluginCenterRef } from './src';
+import { PluginCenter, PluginCenterRef } from './src/index';
 import { pluginEntity, Plugin, createPluginCenter, PLUGIN_STORAGE_KEY } from '@plugin-center/core';
-
 // 内置插件的固定 ID
 const WELCOME_PLUGIN_ID = 'welcome-plugin';
 const EXAMPLE_PLUGIN_ID = 'example-plugin';
@@ -85,58 +84,51 @@ const DEFAULT_PLUGINS = [
   }
 ];
 
+function initDefaultPlugins(pluginCenter: ReturnType<typeof createPluginCenter>) {
+	// 获取所有现有插件，确保数据已加载
+	const allPlugins = pluginCenter.getPlugins()
+	console.log(allPlugins, "allPlugins")
 
-// 初始化默认插件的函数（独立于 React 组件）
-const initDefaultPlugins = (pluginCenter: ReturnType<typeof createPluginCenter>) => {
+	DEFAULT_PLUGINS.forEach(({ id, config }) => {
+		// 检查是否已存在指定 ID 的插件
+		const existingPluginById = allPlugins.find((p: Plugin) => p.id === id)
 
-  // 获取所有现有插件，确保数据已加载
-  const allPlugins = pluginCenter.getPlugins();
-  console.log(allPlugins, "allPlugins");
+		// 如果已存在指定 ID 的插件，跳过
+		if (existingPluginById) {
+			return
+		}
 
-  DEFAULT_PLUGINS.forEach(({ id, config }) => {
-    // 检查是否已存在指定 ID 的插件
-    const existingPluginById = allPlugins.find((p: Plugin) => p.id === id);
-    
-    // 如果已存在指定 ID 的插件，跳过
-    if (existingPluginById) {
-      return;
-    }
+		// 检查是否已存在相同名称和内容的插件（防止重复添加）
+		const duplicatePlugin = allPlugins.find((p: Plugin) => p.content === config.content)
 
-    // 检查是否已存在相同名称和内容的插件（防止重复添加）
-    const duplicatePlugin = allPlugins.find(
-      (p: Plugin) => p.name === config.name && p.content === config.content
-    );
+		// 如果找到重复的插件，更新其 ID 为固定值
+		if (duplicatePlugin && duplicatePlugin.id !== id) {
+			const updatedPlugins = allPlugins.map((p: Plugin) =>
+				p.id === duplicatePlugin.id ? { ...p, id } : p,
+			)
+			pluginEntity.setPlugins(updatedPlugins)
+			return
+		}
 
-    // 如果找到重复的插件，更新其 ID 为固定值
-    if (duplicatePlugin && duplicatePlugin.id !== id) {
-      const updatedPlugins = allPlugins.map((p: Plugin) =>
-        p.id === duplicatePlugin.id ? { ...p, id } : p
-      );
-      pluginEntity.setPlugins(updatedPlugins);
-      localStorage.setItem(PLUGIN_STORAGE_KEY, JSON.stringify(updatedPlugins));
-      return;
-    }
+		// 如果不存在，则添加插件
+		if (!duplicatePlugin) {
+			try {
+				const newPlugin = pluginCenter.addPlugin({ ...config, id })
 
-    // 如果不存在，则添加插件
-    if (!duplicatePlugin) {
-      try {
-        const newPlugin = pluginCenter.addPlugin(config);
-        
-        // 添加后立即更新 id 为固定值
-        if (newPlugin.id !== id) {
-          const updatedPlugins = pluginCenter.getPlugins().map((p: Plugin) =>
-            p.id === newPlugin.id ? { ...p, id } : p
-          );
-          pluginEntity.setPlugins(updatedPlugins);
-          // localStorage.setItem(PLUGIN_STORAGE_KEY, JSON.stringify(updatedPlugins));
-        }
-      } catch (error) {
-        console.error(`添加内置插件 ${id} 失败:`, error);
-      }
-    }
-  });
-
-};
+				// 添加后立即更新 id 为固定值
+				if (newPlugin.id !== id) {
+					const updatedPlugins = pluginCenter
+						.getPlugins()
+						.map((p: Plugin) => (p.id === newPlugin.id ? { ...p, id } : p))
+					pluginEntity.setPlugins(updatedPlugins)
+					// localStorage.setItem(PLUGIN_STORAGE_KEY, JSON.stringify(updatedPlugins));
+				}
+			} catch (error) {
+				console.error(`添加内置插件 ${id} 失败:`, error)
+			}
+		}
+	})
+}
 
 const App: React.FC = () => {
   // 创建 pluginCenter 实例的 ref

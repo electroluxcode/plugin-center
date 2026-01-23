@@ -66,6 +66,7 @@ export type PluginUpdate = Partial<Omit<Plugin, 'id' | 'createdAt'>> & {
 
 // 创建插件时的输入类型（type 可选，会自动检测）
 export type PluginInput = Omit<ScriptPlugin, 'id' | 'createdAt' | 'updatedAt' | 'metadata' | 'type'> & {
+  id?: string; // 可选，如果不指定则自动生成
   type?: PluginTypeValue; // 可选，如果不指定则自动检测
 }
 
