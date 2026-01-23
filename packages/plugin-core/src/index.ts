@@ -2,9 +2,9 @@
 export * from './types';
 
 // 导出核心类
-export { default as FrontPluginCenter, createPluginCenter } from './plugin-core';
+export { default as FrontPluginCenter, createPluginCenter } from './plugin.core';
 // 同时导出默认导出（为了兼容性）
-export { default } from './plugin-core';
+export { default } from './plugin.core';
 
 // 导出工具函数
 export * from './plugin.utils';
