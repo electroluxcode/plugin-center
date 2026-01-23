@@ -1,6 +1,6 @@
 import { Plugin, PluginQuery, PluginUpdate, PluginStats, PluginExecutionContext } from './types';
 import pluginEntity from './plugin.entity';
-import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY, getPluginExportsFromContent } from './plugin-utils';
+import { parsePluginMetadata, validatePlugin, generateId, checkUrlMatch, PLUGIN_STORAGE_KEY, getPluginExportsFromContent } from './plugin.utils';
 
 /**
  * @description 插件服务层，用于管理插件的本地存储、导出导入和业务逻辑

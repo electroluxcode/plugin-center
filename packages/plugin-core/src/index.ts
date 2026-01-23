@@ -7,7 +7,7 @@ export { default as FrontPluginCenter, createPluginCenter } from './plugin-core'
 export { default } from './plugin-core';
 
 // 导出工具函数
-export * from './plugin-utils';
+export * from './plugin.utils';
 
 // 导出内部模块（供高级用法）
 // @ts-ignore

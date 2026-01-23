@@ -12,7 +12,7 @@ import {
 } from './types';
 import pluginEntity from './plugin.entity';
 import pluginService from './plugin.service';
-import { parsePluginMetadata, validatePlugin, checkUrlMatch } from './plugin-utils';
+import { parsePluginMetadata, validatePlugin, checkUrlMatch } from './plugin.utils';
 
 class FrontPluginCenter {
   private static instance: FrontPluginCenter | null = null;
